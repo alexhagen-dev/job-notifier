@@ -2,6 +2,8 @@ import feedparser
 import string
 
 
+# Splits a given text into individual words, as well as stripping away 
+# punctuation and making each word lowercase
 def get_words(text):
     return set(
         text.lower()
@@ -25,8 +27,10 @@ def main():
     # Get RSS feeds
     rssfeeds = open("rssfeeds.txt").readlines()
 
+    # initialize the postlist array
     postlist = []
 
+    # cycle through feeds and find relevant job postings
     for feed in rssfeeds:
         posts = feedparser.parse(feed)
         for post in posts.entries:
@@ -39,6 +43,8 @@ def main():
             if validate_post(words, keywords_set):
                 postlist.append(post)
                     
+    # save relevant postings to output.html
+    # TODO: have output appended to top of file (possibly using shutil and os?)
     with open("output.html", "a", encoding="utf-8") as myfile:        
         for post in postlist:
             myfile.write(str(post['title']) + "<br>")
