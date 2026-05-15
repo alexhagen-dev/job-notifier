@@ -2,7 +2,20 @@ import feedparser
 import string
 
 
-def main():
+def get_words(text):
+    return set(
+        text.lower()
+        .translate(str.maketrans('', '', string.punctuation))
+        .split()
+    )
+
+
+def validate_post(words, keywords_set):
+        # TODO: add check to see if post is already in output file
+        return bool(words & keywords_set)
+
+
+def main():    
     # Generate keyword list from source (txt) file
     keywords = open("keywords.txt").readlines()
 
@@ -21,11 +34,9 @@ def main():
             poststring = str(post)
            
             # Make list of words in post, normalizing each word by making lowercase and stripping punctuation          
-            words = set( # set eliminates duplicates
-                poststring.lower().translate(str.maketrans('', '', string.punctuation)).split()
-            )
+            words = get_words(poststring)
             
-            if words & keywords_set: # Returns a new set with any intersecting words - so in this case, acts as a boolean (empty set == false)
+            if validate_post(words, keywords_set):
                 postlist.append(post)
                     
     with open("output.html", "a", encoding="utf-8") as myfile:        
@@ -34,6 +45,7 @@ def main():
             myfile.write(str(post['type']) + "<br>")
             myfile.write(str(post['summary']) + "<br>")
             myfile.write(str(post['link']) + "<hr>")
+
 
 if __name__ == "__main__":
     main()
