@@ -67,7 +67,7 @@ def main():
             f_temp.write(f"{title.value if title else ''}<br>")
             f_temp.write(f"{feed_title.value if feed_title else ''}<br>")
             f_temp.write(f"{summary.value if summary else ''}<br>")
-            f_temp.write(f'<a href="{post.id}">View Posting</a><hr>')
+            f_temp.write(f'<br><a href="{post.id}">View Posting</a><hr>')
         
         if os.path.exists(original_file):
             with open(original_file, 'r', encoding='utf-8') as f_orig:
