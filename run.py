@@ -42,27 +42,29 @@ def main():
         reader.update_search()
 
         seen = set()
-        
+
         for keyword in keywords_set:
             # go through each result, skipping any already marked as 'read'
             for result in reader.search_entries(keyword, read=False):
-                # mark each entry as "read"
-                reader.mark_entry_as_read(result)
-                # fetch full entry while reader is open
-                entry = reader.get_entry(result.resource_id)
                 if result.resource_id not in seen:
+                    # mark each entry as "read"
+                    reader.mark_entry_as_read(result)
                     seen.add(result.resource_id)
-                    postlist.append(entry)
+                    postlist.append(result)
                     
     # save relevant postings to output.html
     # TODO: have output appended to top of file (possibly using shutil and os?)
     with open("output.html", "a", encoding="utf-8") as myfile:
         for post in postlist:
+            title = post.metadata.get(".title")
+            feed_title = post.metadata.get(".feed.title")
+            summary = post.content.get(".summary")
+
             myfile.write("<b>New post added: " + str(datetime.now()) + "</b><br><br>")
-            myfile.write(f"{post.title}<br>")
-            myfile.write(f"{post.feed.title}<br>")
-            myfile.write(f"{post.summary}<br>")
-            myfile.write(f"{post.link}<hr>")
+            myfile.write(f"{title.value if title else ''}<br>")
+            myfile.write(f"{feed_title.value if feed_title else ''}<br>")
+            myfile.write(f"{summary.value if summary else ''}<br>")
+            myfile.write(f"{post.id}<hr>")
 
 
 if __name__ == "__main__":
