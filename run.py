@@ -1,5 +1,3 @@
-import feedparser
-import string
 from datetime import datetime
 from reader import make_reader, FeedExistsError
 
