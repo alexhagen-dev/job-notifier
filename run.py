@@ -1,5 +1,6 @@
 import feedparser
 import string
+from datetime import datetime
 from reader import make_reader, FeedExistsError
 
 
@@ -53,6 +54,7 @@ def main():
     # TODO: have output appended to top of file (possibly using shutil and os?)
     with open("output.html", "a", encoding="utf-8") as myfile:
         for post in postlist:
+            myfile.write("<b>New post added: " + str(datetime.now()) + "</b><br><br>")
             myfile.write(f"{post.title}<br>")
             myfile.write(f"{post.feed.title}<br>")
             myfile.write(f"{post.summary}<br>")
