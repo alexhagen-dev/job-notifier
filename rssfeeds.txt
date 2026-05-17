@@ -1,3 +1,8 @@
 https://weworkremotely.com/remote-jobs.rss
 https://www.bctechnology.com/rss/jobs/tnetcategory1.xml
 http://www.civicjobs.ca/rss/province?&id=NS
+https://www.realworkfromanywhere.com/remote-backend-jobs/rss.xml
+https://www.realworkfromanywhere.com/remote-fullstack-jobs/rss.xml
+https://www.realworkfromanywhere.com/remote-frontend-jobs/rss.xml
+https://www.realworkfromanywhere.com/remote-software-developer-jobs/rss.xml
+https://www.realworkfromanywhere.com/remote-devops-and-sysadmin-jobs/rss.xml

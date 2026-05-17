@@ -64,8 +64,7 @@ def main():
             myfile.write(f"{title.value if title else ''}<br>")
             myfile.write(f"{feed_title.value if feed_title else ''}<br>")
             myfile.write(f"{summary.value if summary else ''}<br>")
-            myfile.write(f"{post.id}<hr>")
-
+            myfile.write(f'<a href="{post.id}">View Posting</a><hr>')
 
 if __name__ == "__main__":
     main()
