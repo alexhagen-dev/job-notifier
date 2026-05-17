@@ -1,56 +1,62 @@
 import feedparser
 import string
-
-
-# Splits a given text into individual words, as well as stripping away 
-# punctuation and making each word lowercase
-def get_words(text):
-    return set(
-        text.lower()
-        .translate(str.maketrans('', '', string.punctuation))
-        .split()
-    )
-
-
-def validate_post(words, keywords_set):
-        # TODO: add check to see if post is already in output file
-        return bool(words & keywords_set)
+from reader import make_reader, FeedExistsError
 
 
 def main():    
     # Generate keyword list from source (txt) file
-    keywords = open("keywords.txt").readlines()
+    keywords = []
+
+    for line in open("keywords.txt"):
+        stripped = line.strip()
+        if stripped:
+            keywords.append(stripped)
 
     # Convert to set to eliminate duplicates
     keywords_set = set(keywords)
 
     # Get RSS feeds
-    rssfeeds = open("rssfeeds.txt").readlines()
+    rssfeeds = []
 
-    # initialize the postlist array
+    for line in open("rssfeeds.txt"):
+        stripped = line.strip()
+        if stripped:
+            rssfeeds.append(stripped)
+
     postlist = []
 
-    # cycle through feeds and find relevant job postings
-    for feed in rssfeeds:
-        posts = feedparser.parse(feed)
-        for post in posts.entries:
-            # Convert post to string
-            poststring = str(post)
-           
-            # Make list of words in post, normalizing each word by making lowercase and stripping punctuation          
-            words = get_words(poststring)
-            
-            if validate_post(words, keywords_set):
-                postlist.append(post)
+    # initialize/use the reader
+    with make_reader('db.sqlite') as reader:
+        # cycle through feeds and add them to the reader
+        for feed in rssfeeds:
+            try:
+                reader.add_feed(feed)
+            except FeedExistsError:
+                pass
+        
+        # update the feeds
+        reader.update_feeds()
+        
+        # update search index
+        reader.update_search()
+
+        for keyword in keywords_set:
+            # go through each result, skipping any already marked as 'read'
+            for result in reader.search_entries(keyword, read=False):
+                # mark each entry as "read"
+                reader.mark_entry_as_read(result)
+                # fetch full entry while reader is open
+                entry = reader.get_entry(result.resource_id)
+                postlist.append(entry)
                     
     # save relevant postings to output.html
     # TODO: have output appended to top of file (possibly using shutil and os?)
-    with open("output.html", "a", encoding="utf-8") as myfile:        
+    with open("output.html", "a", encoding="utf-8") as myfile:
         for post in postlist:
-            myfile.write(str(post['title']) + "<br>")
-            myfile.write(str(post['type']) + "<br>")
-            myfile.write(str(post['summary']) + "<br>")
-            myfile.write(str(post['link']) + "<hr>")
+            myfile.write(f"{post.title}<br>")
+            myfile.write(f"{post.feed.title}<br>")
+            myfile.write(f"{post.summary}<br>")
+            myfile.write(f"{post.link}<hr>")
 
 
 if __name__ == "__main__":
