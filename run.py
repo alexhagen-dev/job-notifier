@@ -1,5 +1,7 @@
 from datetime import datetime
 from reader import make_reader, FeedExistsError
+import shutil
+import os
 
 
 def main():    
@@ -50,19 +52,29 @@ def main():
                     seen.add(result.resource_id)
                     postlist.append(result)
                     
-    # save relevant postings to output.html
-    # TODO: have output appended to top of file (possibly using shutil and os?)
-    with open("output.html", "a", encoding="utf-8") as myfile:
+    # save relevant postings to output.html, "prepending" new posts to the 
+    # top of the file
+    original_file = 'output.html'
+    temp_file = 'data.txt.tmp'
+
+    with open(temp_file, 'w', encoding='utf-8') as f_temp:
         for post in postlist:
             title = post.metadata.get(".title")
             feed_title = post.metadata.get(".feed.title")
             summary = post.content.get(".summary")
 
-            myfile.write("<b>New post added: " + str(datetime.now()) + "</b><br><br>")
-            myfile.write(f"{title.value if title else ''}<br>")
-            myfile.write(f"{feed_title.value if feed_title else ''}<br>")
-            myfile.write(f"{summary.value if summary else ''}<br>")
-            myfile.write(f'<a href="{post.id}">View Posting</a><hr>')
+            f_temp.write("<b>New post added: " + str(datetime.now()) + "</b><br><br>")
+            f_temp.write(f"{title.value if title else ''}<br>")
+            f_temp.write(f"{feed_title.value if feed_title else ''}<br>")
+            f_temp.write(f"{summary.value if summary else ''}<br>")
+            f_temp.write(f'<a href="{post.id}">View Posting</a><hr>')
+        
+        if os.path.exists(original_file):
+            with open(original_file, 'r', encoding='utf-8') as f_orig:
+                shutil.copyfileobj(f_orig, f_temp)
+
+    os.replace(temp_file, original_file)
+
 
 if __name__ == "__main__":
     main()
