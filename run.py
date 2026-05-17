@@ -41,6 +41,8 @@ def main():
         # update search index
         reader.update_search()
 
+        seen = set()
+        
         for keyword in keywords_set:
             # go through each result, skipping any already marked as 'read'
             for result in reader.search_entries(keyword, read=False):
@@ -48,7 +50,9 @@ def main():
                 reader.mark_entry_as_read(result)
                 # fetch full entry while reader is open
                 entry = reader.get_entry(result.resource_id)
-                postlist.append(entry)
+                if result.resource_id not in seen:
+                    seen.add(result.resource_id)
+                    postlist.append(entry)
                     
     # save relevant postings to output.html
     # TODO: have output appended to top of file (possibly using shutil and os?)
