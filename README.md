@@ -29,3 +29,13 @@ python run.py --debug
 Logs are written to `app.log`.
 
 Results are saved to `output.db`
+
+## Roadmap
+
+- [x] Add debug command line argument
+- [x] Add logging to file
+- [x] Add SQLite storage
+- [ ] Add dashboard for browsing saved posts
+- [ ] Improve reader/feed error handling
+- [ ] Add desktop or email notifications
+- [ ] Refactor run.py logic into separate modules
