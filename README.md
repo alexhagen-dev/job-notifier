@@ -38,6 +38,8 @@ For continuous monitoring, schedule the script to run periodically using Task Sc
 - [x] Add logging to file
 - [x] Add SQLite storage
 - [ ] Add dashboard for browsing saved posts
+- [ ] Add post management to dashboard
+- [ ] Add negative keyword filtering
 - [ ] Improve reader/feed error handling
 - [ ] Add desktop or email notifications
 - [ ] Refactor run.py logic into separate modules
