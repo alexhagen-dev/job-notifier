@@ -1,7 +1,5 @@
 from datetime import datetime
 from reader import make_reader, FeedExistsError
-import shutil
-import os
 import logging
 import argparse
 import sqlite3
@@ -57,63 +55,43 @@ def save_post(cur, post) -> bool:
     return cur.rowcount > 0
 
 
-# TODO: refactor into separate functions 
-def main():    
-    logger.info("Running job notifier script...")
-    
-    # Generate keyword list from source (txt) file
-    keywords = []
+def load_lines(filename: str) -> list[str]:
+    items = []
 
-    with open("keywords.txt", encoding="utf-8") as f:
+    with open(filename, encoding="utf-8") as f:
         for line in f:
             stripped = line.strip()
-
             if stripped:
-                keywords.append(stripped)
+                items.append(stripped)
 
-    # Convert to set to eliminate duplicates
-    keywords_set = set(keywords)
+    return items
 
-    # Get RSS feeds
-    rssfeeds = []
 
-    with open("rssfeeds.txt", encoding="utf-8") as f:
-        for line in f:
-            stripped = line.strip()
-
-            if stripped:
-                rssfeeds.append(stripped)
-
+def collect_posts(reader, keywords: set[str]) -> list:
     postlist = []
+    seen = set()
 
-    # initialize/use the reader
-    with make_reader('db.sqlite') as reader:
-        # cycle through feeds and add them to the reader
-        for feed in rssfeeds:
-            try:
-                reader.add_feed(feed)
-            except FeedExistsError:
-                pass
-        
-        # update the feeds
-        reader.update_feeds()
-        
-        # update search index
-        reader.update_search()
+    for keyword in keywords:
+        logger.debug("Searching keyword: %s", keyword)
+        for result in reader.search_entries(keyword, read=False):
+            if result.resource_id not in seen:
+                # TODO: don't mark posts as "read" before they're saved to the DB
+                reader.mark_entry_as_read(result)
+                seen.add(result.resource_id)
+                postlist.append(result)
 
-        seen = set()
+    return postlist
 
-        for keyword in keywords_set:
-            logger.debug("Searching keyword: %s", keyword)
-            # go through each result, skipping any already marked as 'read'
-            for result in reader.search_entries(keyword, read=False):
-                logger.debug("Keyword match found: %s", keyword)
-                if result.resource_id not in seen:
-                    # mark each entry as "read"
-                    reader.mark_entry_as_read(result)
-                    seen.add(result.resource_id)
-                    postlist.append(result)
-                    
+
+def add_feeds(reader, rssfeeds: list[str]) -> None:
+    for feed in rssfeeds:
+        try:
+            reader.add_feed(feed)
+        except FeedExistsError:
+            pass
+
+
+def save_posts_to_db(postlist) -> int:
     con = sqlite3.connect("output.db")
 
     try:
@@ -127,9 +105,31 @@ def main():
                 saved_count += 1
 
         con.commit()
+        return saved_count
+
     finally:
         con.close()
+
+
+def main():    
+    logger.info("Running job notifier script...")
     
+    keywords = set(load_lines("keywords.txt"))
+    rssfeeds = load_lines("rssfeeds.txt")
+
+    with make_reader("db.sqlite") as reader:
+        add_feeds(reader, rssfeeds)
+        reader.update_feeds()
+        reader.update_search()
+        postlist = collect_posts(reader, keywords)
+
+    if not postlist:
+        logger.info("No new posts found.")
+        return
+    
+    logger.info("%d new posts found.", len(postlist))
+
+    saved_count = save_posts_to_db(postlist)
     logger.info("%d new posts saved to database.", saved_count)
 
 
