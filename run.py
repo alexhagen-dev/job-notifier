@@ -25,6 +25,7 @@ else:
     logger.setLevel(logging.INFO)
 
 
+# TODO: refactor into separate functions 
 def main():    
     logger.info("Running job notifier script...")
     
@@ -92,12 +93,13 @@ def main():
 
     logger.info("%d new posts found.", len(postlist))
 
+    # TODO: migrate to using a database to store found posts
     with open(temp_file, 'w', encoding='utf-8') as f_temp:
         for post in postlist:
             title = post.metadata.get(".title")
             feed_title = post.metadata.get(".feed.title")
             summary = post.content.get(".summary")
-            
+
             f_temp.write("<b>New post added: " + str(datetime.now()) + "</b><br><br>")
             f_temp.write(f"{title.value if title else ''}<br>")
             f_temp.write(f"{feed_title.value if feed_title else ''}<br>")
