@@ -3,3 +3,4 @@ db.sqlite
 db.sqlite.search
 data.txt.tmp
 app.log
+output.db

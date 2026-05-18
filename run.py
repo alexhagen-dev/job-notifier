@@ -4,6 +4,7 @@ import shutil
 import os
 import logging
 import argparse
+import sqlite3
 
 parser = argparse.ArgumentParser()
 parser.add_argument("-d", "--debug", action="store_true", help="Show debug messages when running")
@@ -23,6 +24,37 @@ if args.debug:
     logger.setLevel(logging.DEBUG)
 else:
     logger.setLevel(logging.INFO)
+
+
+def initialize_db(cur) -> None:
+    cur.execute("""
+        CREATE TABLE IF NOT EXISTS posts (
+            datetime TEXT,
+            title TEXT,
+            feedtitle TEXT,
+            summary TEXT,
+            link TEXT PRIMARY KEY
+        )
+    """)
+
+
+def save_post(cur, post) -> bool:
+    title = post.metadata.get(".title")
+    feed_title = post.metadata.get(".feed.title")
+    summary = post.content.get(".summary")
+
+    cur.execute("""
+        INSERT OR IGNORE INTO posts
+        VALUES (?, ?, ?, ?, ?)
+    """, (
+        str(datetime.now()),
+        title.value if title else "",
+        feed_title.value if feed_title else "",
+        summary.value if summary else "",
+        post.id
+    ))
+
+    return cur.rowcount > 0
 
 
 # TODO: refactor into separate functions 
@@ -82,6 +114,24 @@ def main():
                     seen.add(result.resource_id)
                     postlist.append(result)
                     
+    con = sqlite3.connect("output.db")
+
+    try:
+        cur = con.cursor()
+        initialize_db(cur)
+
+        saved_count = 0
+
+        for post in postlist:
+            if save_post(cur, post):
+                saved_count += 1
+
+        con.commit()
+    finally:
+        con.close()
+    
+    logger.info("%d new posts saved to database.", saved_count)
+
     # save relevant postings to output.html, "prepending" new posts to the 
     # top of the file
     original_file = 'output.html'
@@ -93,7 +143,6 @@ def main():
 
     logger.info("%d new posts found.", len(postlist))
 
-    # TODO: migrate to using a database to store found posts
     with open(temp_file, 'w', encoding='utf-8') as f_temp:
         for post in postlist:
             title = post.metadata.get(".title")
