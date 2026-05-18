@@ -6,3 +6,6 @@
 2026-05-18 13:20:42,848:[DEBUG]:__main__: Searching keyword: entry level
 2026-05-18 13:20:42,855:[DEBUG]:__main__: Searching keyword: async
 2026-05-18 13:20:42,857:[DEBUG]:__main__: Searching keyword: asynchronous
+2026-05-18 13:31:15,686:[INFO]:__main__: Running job notifier script
+2026-05-18 13:33:24,223:[INFO]:__main__: Running job notifier script
+2026-05-18 13:33:24,808:[INFO]:__main__: No new posts found.
