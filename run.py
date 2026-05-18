@@ -10,7 +10,11 @@ parser.add_argument("-d", "--debug", action="store_true", help="Show debug messa
 args = parser.parse_args()
 
 # Set global logging level
-logging.basicConfig(level=logging.WARNING)
+logging.basicConfig(
+    level=logging.WARNING,
+    format="%(asctime)s:[%(levelname)s]:%(name)s: %(message)s",
+    filename="app.log"
+)
 
 logger = logging.getLogger(__name__)
 
@@ -22,6 +26,8 @@ else:
 
 
 def main():    
+    logger.info("Running job notifier script")
+    
     # Generate keyword list from source (txt) file
     keywords = []
 
