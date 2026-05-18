@@ -86,25 +86,27 @@ def main():
     original_file = 'output.html'
     temp_file = 'data.txt.tmp'
 
-    with open(temp_file, 'w', encoding='utf-8') as f_temp:
-        if postlist:
-            logger.info("%d new posts found.", len(postlist))
-            for post in postlist:
-                title = post.metadata.get(".title")
-                feed_title = post.metadata.get(".feed.title")
-                summary = post.content.get(".summary")
+    if not postlist:
+        logger.info("No new posts found.")
+        return
 
-                f_temp.write("<b>New post added: " + str(datetime.now()) + "</b><br><br>")
-                f_temp.write(f"{title.value if title else ''}<br>")
-                f_temp.write(f"{feed_title.value if feed_title else ''}<br>")
-                f_temp.write(f"{summary.value if summary else ''}<br>")
-                f_temp.write(f'<br><a href="{post.id}">View Posting</a><hr>')
+    logger.info("%d new posts found.", len(postlist))
+
+    with open(temp_file, 'w', encoding='utf-8') as f_temp:
+        for post in postlist:
+            title = post.metadata.get(".title")
+            feed_title = post.metadata.get(".feed.title")
+            summary = post.content.get(".summary")
             
-            if os.path.exists(original_file):
-                with open(original_file, 'r', encoding='utf-8') as f_orig:
-                    shutil.copyfileobj(f_orig, f_temp)
-        else:
-            logger.info("No new posts found.")
+            f_temp.write("<b>New post added: " + str(datetime.now()) + "</b><br><br>")
+            f_temp.write(f"{title.value if title else ''}<br>")
+            f_temp.write(f"{feed_title.value if feed_title else ''}<br>")
+            f_temp.write(f"{summary.value if summary else ''}<br>")
+            f_temp.write(f'<br><a href="{post.id}">View Posting</a><hr>')
+        
+        if os.path.exists(original_file):
+            with open(original_file, 'r', encoding='utf-8') as f_orig:
+                shutil.copyfileobj(f_orig, f_temp)
 
     os.replace(temp_file, original_file)
 
