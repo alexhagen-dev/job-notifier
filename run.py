@@ -9,14 +9,16 @@ parser = argparse.ArgumentParser()
 parser.add_argument("-d", "--debug", action="store_true", help="Show debug messages when running")
 args = parser.parse_args()
 
-if args.debug:
-    logging.basicConfig(level=logging.DEBUG)
-    logging.getLogger("reader").setLevel(logging.INFO)
-else:
-    logging.basicConfig(level=logging.INFO) 
-    logging.getLogger("reader").setLevel(logging.WARNING)
-   
+# Set global logging level
+logging.basicConfig(level=logging.WARNING)
+
 logger = logging.getLogger(__name__)
+
+# Set logging level for this program (leaving the levels of the imports alone)
+if args.debug:
+    logger.setLevel(logging.DEBUG)
+else:
+    logger.setLevel(logging.INFO)
 
 
 def main():    
