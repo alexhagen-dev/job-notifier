@@ -21,10 +21,12 @@ def main():
     # Generate keyword list from source (txt) file
     keywords = []
 
-    for line in open("keywords.txt"):
-        stripped = line.strip()
-        if stripped:
-            keywords.append(stripped)
+    with open("keywords.txt", encoding="utf-8") as f:
+        for line in f:
+            stripped = line.strip()
+
+            if stripped:
+                keywords.append(stripped)
 
     # Convert to set to eliminate duplicates
     keywords_set = set(keywords)
@@ -32,10 +34,12 @@ def main():
     # Get RSS feeds
     rssfeeds = []
 
-    for line in open("rssfeeds.txt"):
-        stripped = line.strip()
-        if stripped:
-            rssfeeds.append(stripped)
+    with open("rssfeeds.txt", encoding="utf-8") as f:
+        for line in f:
+            stripped = line.strip()
+
+            if stripped:
+                rssfeeds.append(stripped)
 
     postlist = []
 
