@@ -2,6 +2,10 @@ from datetime import datetime
 from reader import make_reader, FeedExistsError
 import shutil
 import os
+import logging
+
+logging.basicConfig(level=logging.INFO)
+logger = logging.getLogger(__name__)
 
 
 def main():    
@@ -44,8 +48,10 @@ def main():
         seen = set()
 
         for keyword in keywords_set:
+            logger.debug("Searching keyword: %s", keyword)
             # go through each result, skipping any already marked as 'read'
             for result in reader.search_entries(keyword, read=False):
+                logger.debug("Keyword match found: %s", keyword)
                 if result.resource_id not in seen:
                     # mark each entry as "read"
                     reader.mark_entry_as_read(result)
