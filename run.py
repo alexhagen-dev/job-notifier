@@ -3,8 +3,17 @@ from reader import make_reader, FeedExistsError
 import shutil
 import os
 import logging
+import argparse
 
-logging.basicConfig(level=logging.INFO)
+parser = argparse.ArgumentParser()
+parser.add_argument("-d", "--debug", action="store_true", help="Show debug messages when running")
+args = parser.parse_args()
+
+if args.debug:
+    logging.basicConfig(level=logging.DEBUG)
+else:
+    logging.basicConfig(level=logging.INFO)    
+
 logger = logging.getLogger(__name__)
 
 
