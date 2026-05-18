@@ -87,6 +87,8 @@ def main():
     temp_file = 'data.txt.tmp'
 
     with open(temp_file, 'w', encoding='utf-8') as f_temp:
+        if postlist:
+            logger.info("%d new posts found.", len(postlist))
         for post in postlist:
             title = post.metadata.get(".title")
             feed_title = post.metadata.get(".feed.title")
