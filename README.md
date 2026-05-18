@@ -1,3 +1,7 @@
+# Job Notifier
+
+A simple Python RSS job-feed monitor that searches job postings for keyword matches and stores matching results in a SQLite database.
+
 ## Setup
 
 1. Create and activate a virtual environment
@@ -16,4 +20,12 @@ pip install -r requirements.txt
 python run.py
 ```
 
-Results will be appended to `output.html`
+Enable debug logging:
+
+```bash
+python run.py --debug
+```
+
+Logs are written to `app.log`.
+
+Results are saved to `output.db`
