@@ -29,3 +29,9 @@ jobs:
       - name: Check CLI help
         run: |
           python run.py --help
+
+      - name: Install Ruff
+        run: pip install ruff
+      
+      - name: Run Ruff
+        run: ruff check .
