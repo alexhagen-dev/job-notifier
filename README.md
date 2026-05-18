@@ -30,6 +30,8 @@ Logs are written to `app.log`.
 
 Results are saved to `output.db`
 
+For continuous monitoring, schedule the script to run periodically using Task Scheduler, cron, or a similar scheduler.
+
 ## Roadmap
 
 - [x] Add debug command line argument
