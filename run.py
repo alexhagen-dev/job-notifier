@@ -3,6 +3,7 @@ from reader import make_reader, FeedExistsError
 import logging
 import argparse
 import sqlite3
+import sys
 
 parser = argparse.ArgumentParser()
 parser.add_argument("-d", "--debug", action="store_true", help="Show debug messages when running")
@@ -114,6 +115,18 @@ def mark_posts_as_read(reader, postlist) -> None:
         reader.mark_entry_as_read(post)
 
 
+def send_notification(tag: str, message: str) -> None:
+    if sys.platform != 'win32':
+        return
+    from windows_toasts import Toast, WindowsToaster
+
+    toaster = WindowsToaster('Job Notifier')
+    toast = Toast()
+    toast.tag = 'job-notifier-' + tag
+    toast.text_fields = [message]
+    toaster.show_toast(toast)
+
+
 def main():    
     logger.info("Running job notifier script...")
     
@@ -134,9 +147,11 @@ def main():
 
     saved_posts = save_posts_to_db(postlist)
     if saved_posts:
-        logger.info("%d new posts saved to database.", len(saved_posts))    
+        num_saved_posts = len(saved_posts)
+        logger.info("%d new posts saved to database.", num_saved_posts)    
         with make_reader("db.sqlite") as reader:
             mark_posts_as_read(reader, saved_posts)
+        send_notification('results', f'Found {num_saved_posts} new jobs.')
     else:
         logger.info("No new posts saved to database.")
 
