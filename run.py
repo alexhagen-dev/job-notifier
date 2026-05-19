@@ -89,21 +89,21 @@ def add_feeds(reader, rssfeeds: list[str]) -> None:
             pass
 
 
-def save_posts_to_db(postlist) -> int:
+def save_posts_to_db(postlist) -> list:
     con = sqlite3.connect("output.db")
 
     try:
         cur = con.cursor()
         initialize_db(cur)
 
-        saved_count = 0
+        saved_posts = []
 
         for post in postlist:
             if save_post(cur, post):
-                saved_count += 1
+                saved_posts.append(post)
 
         con.commit()
-        return saved_count
+        return saved_posts
 
     finally:
         con.close()
@@ -126,16 +126,20 @@ def main():
         reader.update_search()
         postlist = collect_posts(reader, keywords)
 
-        if not postlist:
-            logger.info("No new posts found.")
-            return
-        
-        logger.info("%d new posts found.", len(postlist))
+    if not postlist:
+        logger.info("No new posts found.")
+        return
+    
+    logger.info("%d new posts found.", len(postlist))
 
-        saved_count = save_posts_to_db(postlist)
-        logger.info("%d new posts saved to database.", saved_count)
+    saved_posts = save_posts_to_db(postlist)
+    if saved_posts:
+        logger.info("%d new posts saved to database.", len(saved_posts))    
+        with make_reader("db.sqlite") as reader:
+            mark_posts_as_read(reader, saved_posts)
+    else:
+        logger.info("No new posts saved to database.")
 
-        mark_posts_as_read(reader, postlist)
 
 if __name__ == "__main__":
     main()
