@@ -3,7 +3,7 @@ from reader import make_reader, FeedExistsError
 import logging
 import argparse
 import sqlite3
-from windows_toasts import Toast, WindowsToaster
+import sys
 
 parser = argparse.ArgumentParser()
 parser.add_argument("-d", "--debug", action="store_true", help="Show debug messages when running")
@@ -116,6 +116,10 @@ def mark_posts_as_read(reader, postlist) -> None:
 
 
 def send_notification(tag: str, message: str) -> None:
+    if sys.platform != 'win32':
+        return
+    from windows_toasts import Toast, WindowsToaster
+
     toaster = WindowsToaster('Job Notifier')
     toast = Toast()
     toast.tag = 'job-notifier-' + tag

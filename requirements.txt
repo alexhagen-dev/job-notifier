@@ -1,2 +1,2 @@
 reader
-windows-toasts
+windows-toasts; sys_platform == "win32"
