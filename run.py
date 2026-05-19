@@ -115,6 +115,14 @@ def mark_posts_as_read(reader, postlist) -> None:
         reader.mark_entry_as_read(post)
 
 
+def send_notification(tag: str, message: str) -> None:
+    toaster = WindowsToaster('Job Notifier')
+    toast = Toast()
+    toast.tag = 'job-notifier-' + tag
+    toast.text_fields = [message]
+    toaster.show_toast(toast)
+
+
 def main():    
     logger.info("Running job notifier script...")
     
@@ -139,11 +147,7 @@ def main():
         logger.info("%d new posts saved to database.", num_saved_posts)    
         with make_reader("db.sqlite") as reader:
             mark_posts_as_read(reader, saved_posts)
-        toaster = WindowsToaster('Job Notifier')
-        toast = Toast()
-        toast.tag = 'job-notifier-results'
-        toast.text_fields = [f'Found {num_saved_posts} new jobs.']
-        toaster.show_toast(toast)
+        send_notification('results', f'Found {num_saved_posts} new jobs.')
     else:
         logger.info("No new posts saved to database.")
 
