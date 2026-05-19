@@ -75,8 +75,6 @@ def collect_posts(reader, keywords: set[str]) -> list:
         logger.debug("Searching keyword: %s", keyword)
         for result in reader.search_entries(keyword, read=False):
             if result.resource_id not in seen:
-                # TODO: don't mark posts as "read" before they're saved to the DB
-                reader.mark_entry_as_read(result)
                 seen.add(result.resource_id)
                 postlist.append(result)
 
@@ -111,6 +109,11 @@ def save_posts_to_db(postlist) -> int:
         con.close()
 
 
+def mark_posts_as_read(reader, postlist) -> None:
+    for post in postlist:
+        reader.mark_entry_as_read(post)
+
+
 def main():    
     logger.info("Running job notifier script...")
     
@@ -123,15 +126,16 @@ def main():
         reader.update_search()
         postlist = collect_posts(reader, keywords)
 
-    if not postlist:
-        logger.info("No new posts found.")
-        return
-    
-    logger.info("%d new posts found.", len(postlist))
+        if not postlist:
+            logger.info("No new posts found.")
+            return
+        
+        logger.info("%d new posts found.", len(postlist))
 
-    saved_count = save_posts_to_db(postlist)
-    logger.info("%d new posts saved to database.", saved_count)
+        saved_count = save_posts_to_db(postlist)
+        logger.info("%d new posts saved to database.", saved_count)
 
+        mark_posts_as_read(reader, postlist)
 
 if __name__ == "__main__":
     main()
