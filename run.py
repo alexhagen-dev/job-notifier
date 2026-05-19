@@ -75,8 +75,6 @@ def collect_posts(reader, keywords: set[str]) -> list:
         logger.debug("Searching keyword: %s", keyword)
         for result in reader.search_entries(keyword, read=False):
             if result.resource_id not in seen:
-                # TODO: don't mark posts as "read" before they're saved to the DB
-                reader.mark_entry_as_read(result)
                 seen.add(result.resource_id)
                 postlist.append(result)
 
@@ -91,24 +89,29 @@ def add_feeds(reader, rssfeeds: list[str]) -> None:
             pass
 
 
-def save_posts_to_db(postlist) -> int:
+def save_posts_to_db(postlist) -> list:
     con = sqlite3.connect("output.db")
 
     try:
         cur = con.cursor()
         initialize_db(cur)
 
-        saved_count = 0
+        saved_posts = []
 
         for post in postlist:
             if save_post(cur, post):
-                saved_count += 1
+                saved_posts.append(post)
 
         con.commit()
-        return saved_count
+        return saved_posts
 
     finally:
         con.close()
+
+
+def mark_posts_as_read(reader, postlist) -> None:
+    for post in postlist:
+        reader.mark_entry_as_read(post)
 
 
 def main():    
@@ -129,8 +132,13 @@ def main():
     
     logger.info("%d new posts found.", len(postlist))
 
-    saved_count = save_posts_to_db(postlist)
-    logger.info("%d new posts saved to database.", saved_count)
+    saved_posts = save_posts_to_db(postlist)
+    if saved_posts:
+        logger.info("%d new posts saved to database.", len(saved_posts))    
+        with make_reader("db.sqlite") as reader:
+            mark_posts_as_read(reader, saved_posts)
+    else:
+        logger.info("No new posts saved to database.")
 
 
 if __name__ == "__main__":
