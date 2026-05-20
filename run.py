@@ -106,12 +106,12 @@ def collect_posts(reader, keywords: set[str]) -> list[MatchedPost]:
         logger.debug("Searching keyword: %s", keyword)
 
         for result in reader.search_entries(keyword, read=False):
-            resource_id = result.resource_id
+            link = result.id
 
-            if resource_id not in matches:
-                matches[resource_id] = MatchedPost(post=result)
+            if link not in matches:
+                matches[link] = MatchedPost(post=result)
 
-            matches[resource_id].matched_keywords.add(keyword)
+            matches[link].matched_keywords.add(keyword)
 
     return list(matches.values())
 
