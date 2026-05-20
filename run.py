@@ -4,6 +4,12 @@ import logging
 import argparse
 import sqlite3
 import sys
+from dataclasses import dataclass, field
+
+@dataclass
+class MatchedPost:
+    post: object
+    matched_keywords: set[str] = field(default_factory=set)
 
 parser = argparse.ArgumentParser()
 parser.add_argument("-d", "--debug", action="store_true", help="Show debug messages when running")
@@ -36,8 +42,19 @@ def initialize_db(cur) -> None:
         )
     """)
 
+    cur.execute("""
+        CREATE TABLE IF NOT EXISTS post_keywords (
+            link TEXT NOT NULL,
+            keyword TEXT NOT NULL,
+            PRIMARY KEY (link, keyword),
+            FOREIGN KEY (link) REFERENCES posts(link)
+        )
+    """)
 
-def save_post(cur, post) -> bool:
+
+def save_post(cur, matched_post: MatchedPost) -> bool:
+    post = matched_post.post
+
     title = post.metadata.get(".title")
     feed_title = post.metadata.get(".feed.title")
     summary = post.content.get(".summary")
@@ -50,10 +67,24 @@ def save_post(cur, post) -> bool:
         title.value if title else "",
         feed_title.value if feed_title else "",
         summary.value if summary else "",
-        post.id
+        post.id,
     ))
 
-    return cur.rowcount > 0
+    post_was_inserted = cur.rowcount > 0
+
+    if post_was_inserted:
+        cur.executemany("""
+            INSERT OR IGNORE INTO post_keywords (
+                link,
+                keyword
+            )
+            VALUES (?, ?)
+        """, [
+            (post.id, keyword)
+            for keyword in matched_post.matched_keywords
+        ])
+
+    return post_was_inserted
 
 
 def load_lines(filename: str) -> list[str]:
@@ -68,18 +99,21 @@ def load_lines(filename: str) -> list[str]:
     return items
 
 
-def collect_posts(reader, keywords: set[str]) -> list:
-    postlist = []
-    seen = set()
+def collect_posts(reader, keywords: set[str]) -> list[MatchedPost]:
+    matches: dict[str, MatchedPost] = {}
 
     for keyword in keywords:
         logger.debug("Searching keyword: %s", keyword)
-        for result in reader.search_entries(keyword, read=False):
-            if result.resource_id not in seen:
-                seen.add(result.resource_id)
-                postlist.append(result)
 
-    return postlist
+        for result in reader.search_entries(keyword, read=False):
+            link = result.id
+
+            if link not in matches:
+                matches[link] = MatchedPost(post=result)
+
+            matches[link].matched_keywords.add(keyword)
+
+    return list(matches.values())
 
 
 def add_feeds(reader, rssfeeds: list[str]) -> None:
@@ -90,27 +124,27 @@ def add_feeds(reader, rssfeeds: list[str]) -> None:
             pass
 
 
-def save_posts_to_db(postlist) -> list:
+def save_posts_to_db(matched_posts: list[MatchedPost]) -> list[MatchedPost]:
     con = sqlite3.connect("output.db")
 
     try:
         cur = con.cursor()
         initialize_db(cur)
 
-        saved_posts = []
+        saved_matches = []
 
-        for post in postlist:
-            if save_post(cur, post):
-                saved_posts.append(post)
+        for matched_post in matched_posts:
+            if save_post(cur, matched_post):
+                saved_matches.append(matched_post)
 
         con.commit()
-        return saved_posts
+        return saved_matches
 
     finally:
         con.close()
 
 
-def mark_posts_as_read(reader, postlist) -> None:
+def mark_posts_as_read(reader, postlist: list[object]) -> None:
     for post in postlist:
         reader.mark_entry_as_read(post)
 
@@ -137,20 +171,20 @@ def main():
         add_feeds(reader, rssfeeds)
         reader.update_feeds()
         reader.update_search()
-        postlist = collect_posts(reader, keywords)
+        matched_posts = collect_posts(reader, keywords)
 
-    if not postlist:
+    if not matched_posts:
         logger.info("No new posts found.")
         return
     
-    logger.info("%d new posts found.", len(postlist))
+    logger.info("%d new posts found.", len(matched_posts))
 
-    saved_posts = save_posts_to_db(postlist)
+    saved_posts = save_posts_to_db(matched_posts)
     if saved_posts:
         num_saved_posts = len(saved_posts)
         logger.info("%d new posts saved to database.", num_saved_posts)    
         with make_reader("db.sqlite") as reader:
-            mark_posts_as_read(reader, saved_posts)
+            mark_posts_as_read(reader, [matched.post for matched in saved_posts])
         send_notification('results', f'Found {num_saved_posts} new jobs.')
     else:
         logger.info("No new posts saved to database.")
