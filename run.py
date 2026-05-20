@@ -144,7 +144,7 @@ def save_posts_to_db(matched_posts: list[MatchedPost]) -> list[MatchedPost]:
         con.close()
 
 
-def mark_posts_as_read(reader, postlist) -> None:
+def mark_posts_as_read(reader, postlist: list[object]) -> None:
     for post in postlist:
         reader.mark_entry_as_read(post)
 
