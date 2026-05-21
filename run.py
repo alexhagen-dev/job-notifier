@@ -9,7 +9,7 @@ from dataclasses import dataclass, field
 @dataclass
 class MatchedPost:
     post: object
-    matched_keywords: set[str] = field(default_factory=set)
+    keyword_matches: dict[str, str] = field(default_factory=dict)
 
 parser = argparse.ArgumentParser()
 parser.add_argument("-d", "--debug", action="store_true", help="Show debug messages when running")
@@ -81,7 +81,7 @@ def save_post(cur, matched_post: MatchedPost) -> bool:
             VALUES (?, ?)
         """, [
             (post.id, keyword)
-            for keyword in matched_post.matched_keywords
+            for keyword in matched_post.keyword_matches
         ])
 
     return post_was_inserted
@@ -111,7 +111,7 @@ def collect_posts(reader, keywords: set[str]) -> list[MatchedPost]:
             if link not in matches:
                 matches[link] = MatchedPost(post=result)
 
-            matches[link].matched_keywords.add(keyword)
+            matches[link].keyword_matches[keyword] = ""
 
     return list(matches.values())
 
