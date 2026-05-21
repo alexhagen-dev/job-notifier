@@ -31,13 +31,24 @@ else:
     logger.setLevel(logging.INFO)
 
 
+def migrate_db(cur) -> None:
+    # Assumes post_keywords already exists
+    cur.execute("PRAGMA table_info(post_keywords)")
+    columns = {row[1] for row in cur.fetchall()}
+
+    if "summary" not in columns:
+        cur.execute("""
+            ALTER TABLE post_keywords
+            ADD COLUMN summary TEXT
+        """)
+
+
 def initialize_db(cur) -> None:
     cur.execute("""
         CREATE TABLE IF NOT EXISTS posts (
             datetime TEXT,
             title TEXT,
             feedtitle TEXT,
-            summary TEXT,
             link TEXT PRIMARY KEY
         )
     """)
@@ -46,10 +57,14 @@ def initialize_db(cur) -> None:
         CREATE TABLE IF NOT EXISTS post_keywords (
             link TEXT NOT NULL,
             keyword TEXT NOT NULL,
+            summary TEXT,
             PRIMARY KEY (link, keyword),
             FOREIGN KEY (link) REFERENCES posts(link)
         )
     """)
+
+    # Migrate old versions of DB to current version
+    migrate_db(cur)
 
 
 def save_post(cur, matched_post: MatchedPost) -> bool:
@@ -57,16 +72,14 @@ def save_post(cur, matched_post: MatchedPost) -> bool:
 
     title = post.metadata.get(".title")
     feed_title = post.metadata.get(".feed.title")
-    summary = post.content.get(".summary")
 
     cur.execute("""
         INSERT OR IGNORE INTO posts
-        VALUES (?, ?, ?, ?, ?)
+        VALUES (?, ?, ?, ?)
     """, (
         str(datetime.now()),
         title.value if title else "",
         feed_title.value if feed_title else "",
-        summary.value if summary else "",
         post.id,
     ))
 
@@ -76,12 +89,13 @@ def save_post(cur, matched_post: MatchedPost) -> bool:
         cur.executemany("""
             INSERT OR IGNORE INTO post_keywords (
                 link,
-                keyword
+                keyword,
+                summary
             )
-            VALUES (?, ?)
+            VALUES (?, ?, ?)
         """, [
-            (post.id, keyword)
-            for keyword in matched_post.keyword_matches
+            (post.id, keyword, summary)
+            for keyword, summary in matched_post.keyword_matches.items()
         ])
 
     return post_was_inserted
