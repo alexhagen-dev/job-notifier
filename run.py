@@ -111,7 +111,10 @@ def collect_posts(reader, keywords: set[str]) -> list[MatchedPost]:
             if link not in matches:
                 matches[link] = MatchedPost(post=result)
 
-            matches[link].keyword_matches[keyword] = ""
+            summary = result.content.get(".summary")
+            matches[link].keyword_matches[keyword] = (
+                summary.value if summary else ""
+            )
 
     return list(matches.values())
 
