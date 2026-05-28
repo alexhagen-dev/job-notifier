@@ -67,8 +67,9 @@ def initialize_db(cur) -> None:
     migrate_db(cur)
 
 
-def save_post(cur, matched_post: MatchedPost) -> bool:
+def save_post(cur, matched_post: MatchedPost, saved_at: str | None = None) -> bool:
     post = matched_post.post
+    saved_at = saved_at or str(datetime.now())
 
     title = post.metadata.get(".title")
     feed_title = post.metadata.get(".feed.title")
@@ -82,7 +83,7 @@ def save_post(cur, matched_post: MatchedPost) -> bool:
         )
         VALUES (?, ?, ?, ?)
     """, (
-        str(datetime.now()),
+        saved_at,
         title.value if title else "",
         feed_title.value if feed_title else "",
         post.id,
@@ -146,24 +147,20 @@ def add_feeds(reader, rssfeeds: list[str]) -> None:
             pass
 
 
-def save_posts_to_db(matched_posts: list[MatchedPost]) -> list[MatchedPost]:
-    con = sqlite3.connect("output.db")
+def save_posts_to_db(matched_posts: list[MatchedPost], connection) -> list[MatchedPost]:
+    con = connection
 
-    try:
-        cur = con.cursor()
-        initialize_db(cur)
+    cur = con.cursor()
+    initialize_db(cur)
 
-        saved_matches = []
+    saved_matches = []
 
-        for matched_post in matched_posts:
-            if save_post(cur, matched_post):
-                saved_matches.append(matched_post)
+    for matched_post in matched_posts:
+        if save_post(cur, matched_post):
+            saved_matches.append(matched_post)
 
-        con.commit()
-        return saved_matches
-
-    finally:
-        con.close()
+    con.commit()
+    return saved_matches
 
 
 def mark_posts_as_read(reader, postlist: list[object]) -> None:
@@ -183,7 +180,7 @@ def send_notification(tag: str, message: str) -> None:
     toaster.show_toast(toast)
 
 
-def main():    
+def main(notifier=send_notification):    
     logger.info("Running job notifier script...")
     
     keywords = set(load_lines("keywords.txt"))
@@ -201,13 +198,15 @@ def main():
     
     logger.info("%d new posts found.", len(matched_posts))
 
-    saved_posts = save_posts_to_db(matched_posts)
+    with sqlite3.connect("output.db") as con:
+        saved_posts = save_posts_to_db(matched_posts, con)
+    
     if saved_posts:
         num_saved_posts = len(saved_posts)
         logger.info("%d new posts saved to database.", num_saved_posts)    
         with make_reader("db.sqlite") as reader:
             mark_posts_as_read(reader, [matched.post for matched in saved_posts])
-        send_notification('results', f'Found {num_saved_posts} new jobs.')
+        notifier('results', f'Found {num_saved_posts} new jobs.')
     else:
         logger.info("No new posts saved to database.")
 
