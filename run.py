@@ -75,7 +75,12 @@ def save_post(cur, matched_post: MatchedPost, saved_at: str | None = None) -> bo
     feed_title = post.metadata.get(".feed.title")
 
     cur.execute("""
-        INSERT OR IGNORE INTO posts
+        INSERT OR IGNORE INTO posts (
+            datetime,
+            title,
+            feedtitle,
+            link
+        )
         VALUES (?, ?, ?, ?)
     """, (
         saved_at,

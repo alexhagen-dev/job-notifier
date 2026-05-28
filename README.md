@@ -1,6 +1,6 @@
 # Job Notifier
 
-A simple Python RSS job-feed monitor that searches job postings for keyword matches and stores matching results in a SQLite database.
+A Python RSS job-feed monitor that searches job postings for keyword matches and stores matching results in a SQLite database.
 
 ## Setup
 
